@@ -1,8 +1,6 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./mpv-stubs.nix ];
-
   programs.mpv = {
     enable = true;
 
@@ -11,6 +9,12 @@
       WHEEL_DOWN = "seek -10";
       "Alt+0" = "set window-scale 0.5";
     };
+
+    extraInput = ''
+      #           script-binding uosc/video                   #! Video tracks
+    '';
+
+    includes = [ "manual.conf" ];
 
     config = {
       force-window = true;

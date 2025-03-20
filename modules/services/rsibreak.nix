@@ -23,14 +23,14 @@ in {
     systemd.user.services.rsibreak = {
       Unit = {
         Description = "RSI break timer";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
 
       Install = { WantedBy = [ "graphical-session.target" ]; };
 
       Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
+        Environment = [ "PATH=${config.home.profileDirectory}/bin" ];
         ExecStart = "${pkgs.rsibreak}/bin/rsibreak";
       };
     };

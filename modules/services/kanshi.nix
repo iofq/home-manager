@@ -6,6 +6,46 @@ let
 
   cfg = config.services.kanshi;
 
+  directivesTag = types.attrTag {
+    profile = mkOption {
+      type = profileModule;
+      description = ''
+        profile attribute set.
+      '';
+    };
+    output = mkOption {
+      type = outputModule;
+      description = ''
+        output attribute set.
+      '';
+    };
+    include = mkOption {
+      type = types.str;
+      description = ''
+        Include as another file from _path_.
+        Expands shell syntax (see *wordexp*(3) for details).
+      '';
+    };
+  };
+
+  tagToStr = x:
+    if x ? profile then
+      profileStr x.profile
+    else if x ? output then
+      outputStr x.output
+    else if x ? include then
+      ''include "${x.include}"''
+    else
+      throw "Unknown tags ${attrNames x}";
+
+  directivesStr = concatStringsSep "\n" (map tagToStr cfg.settings);
+
+  oldDirectivesStr = ''
+    ${concatStringsSep "\n"
+    (mapAttrsToList (n: v: profileStr (v // { name = n; })) cfg.profiles)}
+    ${cfg.extraConfig}
+  '';
+
   outputModule = types.submodule {
     options = {
 
@@ -81,6 +121,15 @@ let
         '';
       };
 
+      alias = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "laptopMonitor";
+        description = ''
+          Defines an alias for the output
+        '';
+      };
+
       adaptiveSync = mkOption {
         type = types.nullOr types.bool;
         default = null;
@@ -93,15 +142,16 @@ let
     };
   };
 
-  outputStr =
-    { criteria, status, mode, position, scale, transform, adaptiveSync, ... }:
+  outputStr = { criteria, status, mode, position, scale, transform, adaptiveSync
+    , alias, ... }:
     ''output "${criteria}"'' + optionalString (status != null) " ${status}"
     + optionalString (mode != null) " mode ${mode}"
     + optionalString (position != null) " position ${position}"
     + optionalString (scale != null) " scale ${toString scale}"
     + optionalString (transform != null) " transform ${transform}"
     + optionalString (adaptiveSync != null)
-    " adaptive_sync ${if adaptiveSync then "on" else "off"}";
+    " adaptive_sync ${if adaptiveSync then "on" else "off"}"
+    + optionalString (alias != null) " alias \$${alias}";
 
   profileModule = types.submodule {
     options = {
@@ -110,6 +160,14 @@ let
         default = [ ];
         description = ''
           Outputs configuration.
+        '';
+      };
+
+      name = mkOption {
+        type = types.str;
+        default = "";
+        description = ''
+          Profile name
         '';
       };
 
@@ -127,15 +185,14 @@ let
     };
   };
 
-  profileStr = name:
-    { outputs, exec, ... }: ''
-      profile ${name} {
-        ${
-          concatStringsSep "\n  "
-          (map outputStr outputs ++ map (cmd: "exec ${cmd}") exec)
-        }
+  profileStr = { outputs, exec, ... }@args: ''
+    profile ${args.name or ""} {
+      ${
+        concatStringsSep "\n  "
+        (map outputStr outputs ++ map (cmd: "exec ${cmd}") exec)
       }
-    '';
+    }
+  '';
 in {
 
   meta.maintainers = [ hm.maintainers.nurelin ];
@@ -157,27 +214,29 @@ in {
       type = types.attrsOf profileModule;
       default = { };
       description = ''
-        List of profiles.
+        Attribute set of profiles.
       '';
       example = literalExpression ''
-        undocked = {
-          outputs = [
-            {
-              criteria = "eDP-1";
-            }
-          ];
-        };
-        docked = {
-          outputs = [
-            {
-              criteria = "eDP-1";
-            }
-            {
-              criteria = "Some Company ASDF 4242";
-              transform = "90";
-            }
-          ];
-        };
+        {
+          undocked = {
+            outputs = [
+              {
+                criteria = "eDP-1";
+              }
+            ];
+          };
+          docked = {
+            outputs = [
+              {
+                criteria = "eDP-1";
+              }
+              {
+                criteria = "Some Company ASDF 4242";
+                transform = "90";
+              }
+            ];
+          };
+        }
       '';
     };
 
@@ -190,42 +249,114 @@ in {
       '';
     };
 
+    settings = mkOption {
+      type = types.listOf directivesTag;
+      default = [ ];
+      description = ''
+        Ordered list of directives.
+        See kanshi(5) for informations.
+      '';
+      example = literalExpression ''
+        [
+          { include = "path/to/included/files"; }
+          { output.criteria = "eDP-1";
+            output.scale = 2;
+          }
+          { profile.name = "undocked";
+            profile.outputs = [
+              {
+                criteria = "eDP-1";
+              }
+            ];
+          }
+          { profile.name = "docked";
+            profile.outputs = [
+              {
+                criteria = "eDP-1";
+              }
+              {
+                criteria = "Some Company ASDF 4242";
+                transform = "90";
+              }
+            ];
+          }
+        ]
+      '';
+    };
+
     systemdTarget = mkOption {
       type = types.str;
-      default = "sway-session.target";
+      default = config.wayland.systemd.target;
+      defaultText = literalExpression "config.wayland.systemd.target";
       description = ''
         Systemd target to bind to.
       '';
     };
   };
 
-  config = mkIf cfg.enable {
-    assertions = [
-      (lib.hm.assertions.assertPlatform "services.kanshi" pkgs
-        lib.platforms.linux)
-    ];
+  config = mkIf cfg.enable (mkMerge [
+    {
+      assertions = [
+        (lib.hm.assertions.assertPlatform "services.kanshi" pkgs
+          lib.platforms.linux)
+        {
+          assertion = (cfg.profiles == { } && cfg.extraConfig == "")
+            || (length cfg.settings) == 0;
+          message =
+            "Cannot mix kanshi.settings with kanshi.profiles or kanshi.extraConfig";
+        }
+        {
+          assertion = let profiles = filter (x: x ? profile) cfg.settings;
+          in length
+          (filter (x: any (a: a ? alias && a.alias != null) x.profile.outputs)
+            profiles) == 0;
+          message =
+            "Output kanshi.*.output.alias can only be defined on global scope";
+        }
+      ];
+    }
 
-    xdg.configFile."kanshi/config".text = ''
-      ${concatStringsSep "\n" (mapAttrsToList profileStr cfg.profiles)}
-      ${cfg.extraConfig}
-    '';
+    (mkIf (cfg.profiles != { }) {
+      warnings = [
+        "kanshi.profiles option is deprecated. Use kanshi.settings instead."
+      ];
+    })
 
-    systemd.user.services.kanshi = {
-      Unit = {
-        Description = "Dynamic output configuration";
-        Documentation = "man:kanshi(1)";
-        PartOf = cfg.systemdTarget;
-        Requires = cfg.systemdTarget;
-        After = cfg.systemdTarget;
+    (mkIf (cfg.extraConfig != "") {
+      warnings = [
+        "kanshi.extraConfig option is deprecated. Use kanshi.settings instead."
+      ];
+    })
+
+    {
+      home.packages = [ cfg.package ];
+
+      xdg.configFile."kanshi/config" = let
+        generatedConfigStr =
+          if cfg.profiles == { } && cfg.extraConfig == "" then
+            directivesStr
+          else
+            oldDirectivesStr;
+      in mkIf (generatedConfigStr != "") { text = generatedConfigStr; };
+
+      systemd.user.services.kanshi = {
+        Unit = {
+          Description = "Dynamic output configuration";
+          Documentation = "man:kanshi(1)";
+          ConditionEnvironment = "WAYLAND_DISPLAY";
+          PartOf = cfg.systemdTarget;
+          Requires = cfg.systemdTarget;
+          After = cfg.systemdTarget;
+        };
+
+        Service = {
+          Type = "simple";
+          ExecStart = "${cfg.package}/bin/kanshi";
+          Restart = "always";
+        };
+
+        Install = { WantedBy = [ cfg.systemdTarget ]; };
       };
-
-      Service = {
-        Type = "simple";
-        ExecStart = "${cfg.package}/bin/kanshi";
-        Restart = "always";
-      };
-
-      Install = { WantedBy = [ cfg.systemdTarget ]; };
-    };
-  };
+    }
+  ]);
 }

@@ -1,10 +1,12 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 
 {
+  imports = [ ./fusuma-stubs.nix ];
+
   services.fusuma = {
     enable = true;
     package = config.lib.test.mkStubPackage { outPath = "@fusuma@"; };
-    extraPackages = [ (config.lib.test.mkStubPackage { }) ];
+    extraPackages = [ pkgs.xdotool ];
 
     settings = {
       threshold = { swipe = 1; };
@@ -18,7 +20,7 @@
 
   nmt.script = ''
     assertFileContent \
-      home-files/.config/fusuma/config.yaml \
+      home-files/.config/fusuma/config.yml \
       ${./expected-settings.yaml}
   '';
 }

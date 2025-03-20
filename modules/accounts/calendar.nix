@@ -1,8 +1,6 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
+{ config, lib, ... }:
 let
+  inherit (lib) mkOption types;
 
   cfg = config.accounts.calendar;
 
@@ -12,18 +10,20 @@ let
         path = mkOption {
           type = types.str;
           default = "${cfg.basePath}/${name}";
-          defaultText = "‹accounts.calendar.basePath›/‹name›";
+          defaultText =
+            lib.literalExpression "‹accounts.calendar.basePath›/‹name›";
           description = "The path of the storage.";
         };
 
         type = mkOption {
           type = types.enum [ "filesystem" "singlefile" ];
+          default = "filesystem";
           description = "The type of the storage.";
         };
 
         fileExt = mkOption {
           type = types.nullOr types.str;
-          default = null;
+          default = ".ics";
           description = "The file extension to use.";
         };
 
@@ -57,15 +57,6 @@ let
         description = "User name for authentication.";
       };
 
-      # userNameCommand = mkOption {
-      #   type = types.nullOr (types.listOf types.str);
-      #   default = null;
-      #   example = [ "~/get-username.sh" ];
-      #   description = ''
-      #     A command that prints the user name to standard output.
-      #   '';
-      # };
-
       passwordCommand = mkOption {
         type = types.nullOr (types.listOf types.str);
         default = null;
@@ -77,7 +68,7 @@ let
     };
   };
 
-  calendarOpts = { name, config, ... }: {
+  calendarOpts = { name, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -98,7 +89,8 @@ let
       };
 
       primaryCollection = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
+        default = null;
         description = ''
           The primary collection of the account. Required when an
           account has multiple collections.
@@ -106,8 +98,8 @@ let
       };
 
       local = mkOption {
-        type = types.nullOr (localModule name);
-        default = null;
+        type = localModule name;
+        default = { };
         description = ''
           Local configuration for the calendar.
         '';
@@ -129,8 +121,9 @@ in {
   options.accounts.calendar = {
     basePath = mkOption {
       type = types.str;
+      example = ".calendar";
       apply = p:
-        if hasPrefix "/" p then p else "${config.home.homeDirectory}/${p}";
+        if lib.hasPrefix "/" p then p else "${config.home.homeDirectory}/${p}";
       description = ''
         The base directory in which to save calendars. May be a
         relative path, in which case it is relative the home
@@ -149,15 +142,15 @@ in {
       description = "List of calendars.";
     };
   };
-  config = mkIf (cfg.accounts != { }) {
+  config = lib.mkIf (cfg.accounts != { }) {
     assertions = let
-      primaries =
-        catAttrs "name" (filter (a: a.primary) (attrValues cfg.accounts));
+      primaries = lib.catAttrs "name"
+        (lib.filter (a: a.primary) (lib.attrValues cfg.accounts));
     in [{
-      assertion = length primaries <= 1;
+      assertion = lib.length primaries <= 1;
       message = "Must have at most one primary calendar account but found "
-        + toString (length primaries) + ", namely "
-        + concatStringsSep ", " primaries;
+        + toString (lib.length primaries) + ", namely "
+        + lib.concatStringsSep ", " primaries;
     }];
   };
 }

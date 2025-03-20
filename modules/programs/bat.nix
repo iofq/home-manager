@@ -1,30 +1,25 @@
 { config, lib, pkgs, ... }:
-
-with lib;
-
 let
+  inherit (lib) literalExpression mkEnableOption mkOption mkIf types;
 
   cfg = config.programs.bat;
-
-  package = pkgs.bat;
 
   toConfigFile = attrs:
     let
       inherit (builtins) isBool attrNames;
-      nonBoolFlags = filterAttrs (_: v: !(isBool v)) attrs;
-      enabledBoolFlags = filterAttrs (_: v: isBool v && v) attrs;
+      nonBoolFlags = lib.filterAttrs (_: v: !(isBool v)) attrs;
+      enabledBoolFlags = lib.filterAttrs (_: v: isBool v && v) attrs;
 
-      keyValuePairs = generators.toKeyValue {
+      keyValuePairs = lib.generators.toKeyValue {
         mkKeyValue = k: v: "--${k}=${lib.escapeShellArg v}";
         listsAsDuplicateKeys = true;
       } nonBoolFlags;
-      switches = concatMapStrings (k: ''
+      switches = lib.concatMapStrings (k: ''
         --${k}
       '') (attrNames enabledBoolFlags);
     in keyValuePairs + switches;
-
 in {
-  meta.maintainers = [ ];
+  meta.maintainers = with lib.maintainers; [ khaneliman ];
 
   options.programs.bat = {
     enable = mkEnableOption "bat, a cat clone with wings";
@@ -51,6 +46,8 @@ in {
         Additional bat packages to install.
       '';
     };
+
+    package = lib.mkPackageOption pkgs "bat" { };
 
     themes = mkOption {
       type = types.attrsOf (types.either types.lines (types.submodule {
@@ -122,15 +119,15 @@ in {
     };
   };
 
-  config = mkIf cfg.enable (mkMerge [
-    (mkIf (any isString (attrValues cfg.themes)) {
+  config = mkIf cfg.enable (lib.mkMerge [
+    (mkIf (lib.any lib.isString (lib.attrValues cfg.themes)) {
       warnings = [''
         Using programs.bat.themes as a string option is deprecated and will be
         removed in the future. Please change to using it as an attribute set
         instead.
       ''];
     })
-    (mkIf (any isString (attrValues cfg.syntaxes)) {
+    (mkIf (lib.any lib.isString (lib.attrValues cfg.syntaxes)) {
       warnings = [''
         Using programs.bat.syntaxes as a string option is deprecated and will be
         removed in the future. Please change to using it as an attribute set
@@ -138,20 +135,20 @@ in {
       ''];
     })
     {
-      home.packages = [ package ] ++ cfg.extraPackages;
+      home.packages = [ cfg.package ] ++ cfg.extraPackages;
 
-      xdg.configFile = mkMerge ([({
+      xdg.configFile = lib.mkMerge ([{
         "bat/config" =
           mkIf (cfg.config != { }) { text = toConfigFile cfg.config; };
-      })] ++ (flip mapAttrsToList cfg.themes (name: val: {
-        "bat/themes/${name}.tmTheme" = if isString val then {
+      }] ++ (lib.flip lib.mapAttrsToList cfg.themes (name: val: {
+        "bat/themes/${name}.tmTheme" = if lib.isString val then {
           text = val;
         } else {
           source =
             if isNull val.file then "${val.src}" else "${val.src}/${val.file}";
         };
-      })) ++ (flip mapAttrsToList cfg.syntaxes (name: val: {
-        "bat/syntaxes/${name}.sublime-syntax" = if isString val then {
+      })) ++ (lib.flip lib.mapAttrsToList cfg.syntaxes (name: val: {
+        "bat/syntaxes/${name}.sublime-syntax" = if lib.isString val then {
           text = val;
         } else {
           source =
@@ -159,11 +156,15 @@ in {
         };
       })));
 
-      home.activation.batCache = hm.dag.entryAfter [ "linkGeneration" ] ''
+      # NOTE: run `bat cache --build` in an empty directory to work
+      # around failure when ~/cache exists
+      # https://github.com/sharkdp/bat/issues/1726
+      home.activation.batCache = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         (
-          export XDG_CACHE_HOME=${escapeShellArg config.xdg.cacheHome}
+          export XDG_CACHE_HOME=${lib.escapeShellArg config.xdg.cacheHome}
           verboseEcho "Rebuilding bat theme cache"
-          run ${lib.getExe package} cache --build
+          cd "${pkgs.emptyDirectory}"
+          run ${lib.getExe cfg.package} cache --build
         )
       '';
     }

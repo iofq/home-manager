@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 {
   programs = {
@@ -10,18 +10,13 @@
     };
   };
 
-  test.stubs = {
-    oh-my-posh = { };
-    nushell = { };
-  };
-
   nmt.script = let
-    configFile = if pkgs.stdenv.isDarwin then
+    configFile = if pkgs.stdenv.isDarwin && !config.xdg.enable then
       "home-files/Library/Application Support/nushell/config.nu"
     else
       "home-files/.config/nushell/config.nu";
 
-    envFile = if pkgs.stdenv.isDarwin then
+    envFile = if pkgs.stdenv.isDarwin && !config.xdg.enable then
       "home-files/Library/Application Support/nushell/env.nu"
     else
       "home-files/.config/nushell/env.nu";

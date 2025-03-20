@@ -36,12 +36,12 @@ in {
     systemd.user.services.nextcloud-client = {
       Unit = {
         Description = "Nextcloud Client";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
 
       Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
+        Environment = [ "PATH=${config.home.profileDirectory}/bin" ];
         ExecStart = "${cfg.package}/bin/nextcloud"
           + (optionalString cfg.startInBackground " --background");
       };

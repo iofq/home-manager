@@ -56,7 +56,7 @@ let
   mpvPackage = if cfg.scripts == [ ] then
     cfg.package
   else
-    pkgs.wrapMpv pkgs.mpv-unwrapped { scripts = cfg.scripts; };
+    pkgs.mpv.override { inherit (cfg) scripts; };
 
 in {
   options = {
@@ -67,7 +67,7 @@ in {
         type = types.package;
         default = pkgs.mpv;
         example = literalExpression
-          "pkgs.wrapMpv (pkgs.mpv-unwrapped.override { vapoursynthSupport = true; }) { youtubeSupport = true; }";
+          "pkgs.mpv-unwrapped.wrapper { mpv = pkgs.mpv-unwrapped.override { vapoursynthSupport = true; }; youtubeSupport = true; }";
         description = ''
           Package providing mpv.
         '';
@@ -128,6 +128,19 @@ in {
         '';
       };
 
+      includes = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = literalExpression ''
+          [
+            "~/path/to/config.inc";
+            "~/path/to/conditional.inc";
+          ]
+        '';
+        description =
+          "List of configuration files to include at the end of mpv.conf.";
+      };
+
       profiles = mkOption {
         description = ''
           Sub-configuration options for specific profiles written to
@@ -176,6 +189,20 @@ in {
           }
         '';
       };
+
+      extraInput = mkOption {
+        description = ''
+          Additional lines that are appended to {file}`$XDG_CONFIG_HOME/mpv/input.conf`.
+           See {manpage}`mpv(1)` for the full list of options.
+        '';
+        type = with types; lines;
+        default = "";
+        example = ''
+          esc         quit                        #! Quit
+          #           script-binding uosc/video   #! Video tracks
+          # additional comments
+        '';
+      };
     };
   };
 
@@ -191,6 +218,14 @@ in {
       home.packages = [ mpvPackage ];
       programs.mpv.finalPackage = mpvPackage;
     }
+
+    (mkIf (cfg.includes != [ ]) {
+      xdg.configFile."mpv/mpv.conf" = {
+        text = lib.mkAfter
+          (concatMapStringsSep "\n" (x: "include=${x}") cfg.includes);
+      };
+    })
+
     (mkIf (cfg.config != { } || cfg.profiles != { }) {
       xdg.configFile."mpv/mpv.conf".text = ''
         ${optionalString (cfg.defaultProfiles != [ ])
@@ -199,8 +234,11 @@ in {
         ${optionalString (cfg.profiles != { }) (renderProfiles cfg.profiles)}
       '';
     })
-    (mkIf (cfg.bindings != { }) {
-      xdg.configFile."mpv/input.conf".text = renderBindings cfg.bindings;
+    (mkIf (cfg.bindings != { } || cfg.extraInput != "") {
+      xdg.configFile."mpv/input.conf".text = mkMerge [
+        (mkIf (cfg.bindings != { }) (renderBindings cfg.bindings))
+        (mkIf (cfg.extraInput != "") cfg.extraInput)
+      ];
     })
     {
       xdg.configFile = mapAttrs' (name: value:
@@ -210,5 +248,5 @@ in {
     }
   ]);
 
-  meta.maintainers = with maintainers; [ tadeokondrak thiagokokada chuangzhu ];
+  meta.maintainers = with maintainers; [ thiagokokada chuangzhu ];
 }

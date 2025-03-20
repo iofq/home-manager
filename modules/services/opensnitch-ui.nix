@@ -23,12 +23,12 @@ in {
     systemd.user.services.opensnitch-ui = {
       Unit = {
         Description = "Opensnitch ui";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
 
       Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
+        Environment = [ "PATH=${config.home.profileDirectory}/bin" ];
         ExecStart = "${pkgs.opensnitch-ui}/bin/opensnitch-ui";
       };
 

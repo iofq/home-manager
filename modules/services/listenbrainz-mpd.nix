@@ -15,7 +15,7 @@ in {
   options.services.listenbrainz-mpd = {
     enable = mkEnableOption "listenbrainz-mpd";
 
-    package = mkPackageOption pkgs "listenbrainz-mpd" { };
+    package = mkPackageOption pkgs "listenbrainz-mpd" { nullable = true; };
 
     settings = mkOption {
       type = tomlFormat.type;
@@ -24,12 +24,12 @@ in {
         Configuration for listenbrainz-mpd written to
         {file}`$XDG_CONFIG_HOME/listenbrainz-mpd/config.toml`.
       '';
-      example = { submission.tokenFile = "/run/secrets/listenbrainz-mpd"; };
+      example = { submission.token_file = "/run/secrets/listenbrainz-mpd"; };
     };
   };
 
   config = mkIf cfg.enable {
-    systemd.user.services."listenbrainz-mpd" = {
+    systemd.user.services."listenbrainz-mpd" = lib.mkIf (cfg.package != null) {
       Unit = {
         Description = "ListenBrainz submission client for MPD";
         Documentation = "https://codeberg.org/elomatreb/listenbrainz-mpd";

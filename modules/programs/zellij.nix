@@ -6,6 +6,7 @@ let
 
   cfg = config.programs.zellij;
   yamlFormat = pkgs.formats.yaml { };
+  zellijCmd = getExe cfg.package;
 
 in {
   meta.maintainers = [ hm.maintainers.mainrs ];
@@ -33,24 +34,24 @@ in {
       '';
       description = ''
         Configuration written to
-        {file}`$XDG_CONFIG_HOME/zellij/config.yaml`.
+        {file}`$XDG_CONFIG_HOME/zellij/config.kdl`.
+
+        If `programs.zellij.package.version` is older than 0.32.0, then
+        the configuration is written to {file}`$XDG_CONFIG_HOME/zellij/config.yaml`.
 
         See <https://zellij.dev/documentation> for the full
         list of options.
       '';
     };
 
-    enableBashIntegration = mkEnableOption "Bash integration" // {
-      default = false;
-    };
+    enableBashIntegration =
+      lib.hm.shell.mkBashIntegrationOption { inherit config; };
 
-    enableZshIntegration = mkEnableOption "Zsh integration" // {
-      default = false;
-    };
+    enableFishIntegration =
+      lib.hm.shell.mkFishIntegrationOption { inherit config; };
 
-    enableFishIntegration = mkEnableOption "Fish integration" // {
-      default = false;
-    };
+    enableZshIntegration =
+      lib.hm.shell.mkZshIntegrationOption { inherit config; };
   };
 
   config = mkIf cfg.enable {
@@ -69,16 +70,16 @@ in {
       };
 
     programs.bash.initExtra = mkIf cfg.enableBashIntegration (mkOrder 200 ''
-      eval "$(zellij setup --generate-auto-start bash)"
+      eval "$(${zellijCmd} setup --generate-auto-start bash)"
     '');
 
     programs.zsh.initExtra = mkIf cfg.enableZshIntegration (mkOrder 200 ''
-      eval "$(zellij setup --generate-auto-start zsh)"
+      eval "$(${zellijCmd} setup --generate-auto-start zsh)"
     '');
 
     programs.fish.interactiveShellInit = mkIf cfg.enableFishIntegration
       (mkOrder 200 ''
-        eval (zellij setup --generate-auto-start fish | string collect)
+        eval (${zellijCmd} setup --generate-auto-start fish | string collect)
       '');
   };
 }

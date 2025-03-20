@@ -48,10 +48,11 @@ in {
       darkman, a tool that automatically switches dark-mode on and off based on
       the time of the day'';
 
-    package = mkPackageOption pkgs "darkman" { };
+    package = mkPackageOption pkgs "darkman" { nullable = true; };
 
     settings = mkOption {
       type = types.submodule { freeformType = yamlFormat.type; };
+      default = { };
       example = literalExpression ''
         {
           lat = 52.3;
@@ -75,7 +76,7 @@ in {
       (hm.assertions.assertPlatform "services.darkman" pkgs platforms.linux)
     ];
 
-    home.packages = [ cfg.package ];
+    home.packages = lib.mkIf (cfg.package != null) [ cfg.package ];
 
     xdg.configFile = {
       "darkman/config.yaml" = mkIf (cfg.settings != { }) {
@@ -90,13 +91,13 @@ in {
         (generateScripts "light-mode.d" cfg.lightModeScripts))
     ];
 
-    systemd.user.services.darkman = {
+    systemd.user.services.darkman = lib.mkIf (cfg.package != null) {
       Unit = {
         Description = "Darkman system service";
         Documentation = "man:darkman(1)";
         PartOf = [ "graphical-session.target" ];
         BindsTo = [ "graphical-session.target" ];
-        X-Restart-Triggers =
+        X-Restart-Triggers = mkIf (cfg.settings != { })
           [ "${config.xdg.configFile."darkman/config.yaml".source}" ];
       };
 

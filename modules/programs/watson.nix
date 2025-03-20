@@ -14,7 +14,7 @@ let
     config.xdg.configHome;
 
 in {
-  meta.maintainers = [ maintainers.polykernel ];
+  meta.maintainers = [ ];
 
   options.programs.watson = {
     enable = mkEnableOption "watson, a wonderful CLI to track your time";
@@ -26,17 +26,14 @@ in {
       description = "Package providing the {command}`watson`.";
     };
 
-    enableBashIntegration = mkEnableOption "watson's bash integration" // {
-      default = true;
-    };
+    enableBashIntegration =
+      lib.hm.shell.mkBashIntegrationOption { inherit config; };
 
-    enableZshIntegration = mkEnableOption "watson's zsh integration" // {
-      default = true;
-    };
+    enableFishIntegration =
+      lib.hm.shell.mkFishIntegrationOption { inherit config; };
 
-    enableFishIntegration = mkEnableOption "watson's fish integration" // {
-      default = true;
-    };
+    enableZshIntegration =
+      lib.hm.shell.mkZshIntegrationOption { inherit config; };
 
     settings = mkOption {
       type = iniFormat.type;

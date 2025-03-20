@@ -96,10 +96,11 @@ in {
 
     extraPackages = mkOption {
       type = types.listOf types.package;
-      default = with pkgs; [ coreutils ];
-      defaultText = literalExpression "pkgs.coreutils";
+      default = with pkgs; [ xdotool coreutils xorg.xprop ];
+      defaultText =
+        literalExpression "pkgs.xdotool pkgs.coreutils pkgs.xorg.xprop";
       example = literalExpression ''
-        with pkgs; [ coreutils xdotool ];
+        with pkgs; [ xdotool coreutils xorg.xprop ];
       '';
       description = ''
         Extra packages needs to bring to the scope of fusuma service.
@@ -113,19 +114,18 @@ in {
         lib.platforms.linux)
     ];
 
-    xdg.configFile."fusuma/config.yaml".source = configYaml;
+    xdg.configFile."fusuma/config.yml".source = configYaml;
 
     systemd.user.services.fusuma = {
       Unit = {
         Description = "Fusuma services";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
 
       Service = {
         Environment = with pkgs; "PATH=${makeBinPath cfg.extraPackages}";
-        ExecStart =
-          "${cfg.package}/bin/fusuma -c ${config.xdg.configHome}/fusuma/config.yaml";
+        ExecStart = "${cfg.package}/bin/fusuma";
       };
 
       Install = { WantedBy = [ "graphical-session.target" ]; };

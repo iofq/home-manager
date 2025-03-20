@@ -1,8 +1,7 @@
-{ config, lib, options, pkgs, ... }:
-
-with lib;
+{ config, lib, pkgs, ... }:
 
 let
+  inherit (lib) mkOption types;
 
   cfg = config.news;
 
@@ -42,11 +41,12 @@ let
       };
     };
 
-    config = { id = mkDefault (builtins.hashString "sha256" config.message); };
+    config = {
+      id = lib.mkDefault (builtins.hashString "sha256" config.message);
+    };
   });
-
 in {
-  meta.maintainers = [ maintainers.rycee ];
+  meta.maintainers = [ lib.maintainers.rycee ];
 
   options = {
     news = {
@@ -1401,6 +1401,762 @@ in {
         '';
       }
 
+      {
+        time = "2024-02-05T22:33:54+00:00";
+        message = ''
+          A new module is available: 'services.arrpc'
+        '';
+      }
+
+      {
+        time = "2024-02-05T22:45:37+00:00";
+        message = ''
+          A new module is available: 'programs.jetbrains-remote'
+        '';
+      }
+
+      {
+        time = "2024-02-21T23:01:27+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'wayland.windowManager.river'.
+        '';
+      }
+
+      {
+        time = "2024-03-08T22:20:04+00:00";
+        message = ''
+          A new module is available: 'programs.zk'
+        '';
+      }
+
+      {
+        time = "2024-03-08T22:23:24+00:00";
+        message = ''
+          A new module is available: 'programs.ranger'.
+        '';
+      }
+
+      {
+        time = "2024-03-13T13:28:22+00:00";
+        message = ''
+          A new module is available: 'programs.joplin-desktop'.
+        '';
+      }
+
+      {
+        time = "2024-03-14T07:22:09+00:00";
+        condition = config.services.gpg-agent.enable;
+        message = ''
+          'services.gpg-agent.pinentryFlavor' has been removed and replaced by
+          'services.gpg-agent.pinentryPackage'.
+        '';
+      }
+
+      {
+        time = "2024-03-14T07:22:59+00:00";
+        condition = config.programs.rbw.enable;
+        message = ''
+          'programs.rbw.pinentry' has been simplified to only accept 'null' or
+          a package.
+        '';
+      }
+
+      {
+        time = "2024-03-15T08:39:52+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.activitywatch'.
+        '';
+      }
+
+      {
+        time = "2024-03-28T17:02:19+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.amberol'.
+        '';
+      }
+
+      {
+        time = "2024-04-08T21:43:38+00:00";
+        message = ''
+          A new module is available: 'programs.bun'.
+        '';
+      }
+
+      {
+        time = "2024-04-18T22:30:49+00:00";
+        message = ''
+          A new module is available: 'programs.fd'.
+        '';
+      }
+
+      {
+        time = "2024-04-19T09:23:52+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.tofi'.
+        '';
+      }
+
+      {
+        time = "2024-04-19T10:01:55+00:00";
+        message = ''
+          A new module is available: 'programs.spotify-player'.
+        '';
+      }
+
+      {
+        time = "2024-04-19T14:53:17+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.remmina'.
+        '';
+      }
+
+      {
+        time = "2024-04-21T20:53:09+00:00";
+        message = ''
+          A new module is available: 'programs.poetry'.
+
+          Poetry is a tool that helps you manage Python project dependencies and
+          packages. See https://python-poetry.org/ for more.
+        '';
+      }
+
+      {
+        time = "2024-04-22T18:04:47+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.amberol'.
+
+          Amberol is a music player with no delusions of grandeur. If you just
+          want to play music available on your local system then Amberol is the
+          music player you are looking for. See https://apps.gnome.org/Amberol/
+          for more.
+        '';
+      }
+
+      {
+        time = "2024-04-28T20:27:08+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.psd'.
+
+          Profile-sync-daemon (psd) is a tiny pseudo-daemon designed to manage
+          your browser's profile in tmpfs and to periodically sync it back to
+          your physical disc (HDD/SSD).
+        '';
+      }
+
+      {
+        time = "2024-04-29T22:01:51+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.swaync'.
+
+          SwayNotificationCenter is a simple notification daemon with a GTK GUI
+          for notifications and the control center. See
+          https://github.com/ErikReider/SwayNotificationCenter for more.
+        '';
+      }
+
+      {
+        time = "2024-04-30T18:28:28+00:00";
+        message = ''
+          A new module is available: 'programs.freetube'.
+
+          FreeTube is a YouTube client built around using YouTube more
+          privately. You can enjoy your favorite content and creators without
+          your habits being tracked. See https://freetubeapp.io/ for more.
+        '';
+      }
+
+      {
+        time = "2024-04-30T21:57:23+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.conky'.
+
+          Conky is a system monitor for X. Conky can display just about
+          anything, either on your root desktop or in its own window. See
+          https://conky.cc/ for more.
+        '';
+      }
+
+      {
+        time = "2024-05-05T07:22:01+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.hypridle'.
+
+          Hypridle is a program that monitors user activity and runs commands
+          when idle or active. See https://github.com/hyprwm/hypridle for more.
+        '';
+      }
+
+      {
+        time = "2024-05-06T07:36:13+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.gnome-shell'.
+
+          GNOME Shell is the graphical shell of the GNOME desktop environment.
+          It provides basic functions like launching applications and switching
+          between windows, and is also a widget engine.
+        '';
+      }
+
+      {
+        time = "2024-05-10T10:30:58+00:00";
+        message = ''
+          A new module is available: 'programs.fastfetch'.
+
+          Fastfetch is a Neofetch-like tool for fetching system information and
+          displaying them in a pretty way. See
+          https://github.com/fastfetch-cli/fastfetch for more.
+        '';
+      }
+
+      {
+        time = "2024-05-10T11:48:34+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.hyprlock'.
+
+          Hyprland's simple, yet multi-threaded and GPU-accelerated screen
+          locking utility. See https://github.com/hyprwm/hyprlock for more.
+        '';
+      }
+
+      {
+        time = "2024-05-10T13:35:19+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.hyprpaper'.
+
+          Hyprpaper is a blazing fast wallpaper utility for Hyprland with the
+          ability to dynamically change wallpapers through sockets. It will work
+          on all wlroots-based compositors, though. See
+          https://github.com/hyprwm/hyprpaper for more.
+        '';
+      }
+
+      {
+        time = "2024-05-10T21:28:38+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.yambar'.
+
+          Yambar is a lightweight and configurable status panel for X11 and
+          Wayland, that goes to great lengths to be both CPU and battery
+          efficient - polling is only done when absolutely necessary.
+
+          See https://codeberg.org/dnkl/yambar for more.
+        '';
+      }
+
+      {
+        time = "2024-05-21T20:22:57+00:00";
+        condition = config.programs.git.signing != { };
+        message = ''
+          The Git module now supports signing via SSH and X.509 keys, in addition to OpenPGP/GnuPG,
+          via the `programs.git.signing.format` option.
+
+          The format defaults to `openpgp` for now, due to backwards compatibility reasons — this is
+          not guaranteed to last! GPG users should manually set `programs.git.signing.format` to
+          `openpgp` as soon as possible.
+
+          Accordingly, `programs.git.signing.gpgPath` has been renamed to the more generic option
+          `programs.git.signing.signer` as not everyone uses GPG.
+          Please migrate to the new option to suppress the generated warning.
+        '';
+      }
+
+      {
+        time = "2024-05-25T14:36:03+00:00";
+        message = ''
+          Multiple new options are available:
+
+          - 'nix.nixPath'
+          - 'nix.keepOldNixPath'
+          - 'nix.channels'
+        '';
+      }
+
+      {
+        time = "2024-06-22T05:49:48+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.blanket'.
+
+          Blanket is a program you can use to improve your focus and increase
+          your productivity by listening to different sounds. See
+          https://github.com/rafaelmardojai/blanket for more.
+        '';
+      }
+
+      {
+        time = "2024-06-26T07:07:17+00:00";
+        condition = with config.programs.yazi;
+          enable && (enableBashIntegration || enableZshIntegration
+            || enableFishIntegration || enableNushellIntegration);
+        message = ''
+          Yazi's shell integration wrappers have been renamed from 'ya' to 'yy'.
+
+          A new option `programs.yazi.shellWrapperName` is also available that
+          allows you to override this name.
+        '';
+      }
+
+      {
+        time = "2024-06-28T14:18:16+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.glance'.
+
+          Glance is a self-hosted dashboard that puts all your feeds in
+          one place. See https://github.com/glanceapp/glance for more.
+        '';
+      }
+
+      {
+        time = "2024-08-18T11:42:08+00:00";
+        message = ''
+          A new module is available: 'programs.lapce'.
+
+          Lightning-fast and Powerful Code Editor written in Rust.
+          See https://lapce.dev/ for more.
+        '';
+      }
+
+      {
+        time = "2024-09-13T08:58:17+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.trayscale'.
+
+          An unofficial GUI wrapper around the Tailscale CLI client.
+        '';
+      }
+
+      {
+        time = "2024-09-13T09:50:49+00:00";
+        message = ''
+          A new module is available: 'programs.neovide'.
+
+          Neovide is a simple, no-nonsense, cross-platform graphical user
+          interface for Neovim (an aggressively refactored and updated Vim
+          editor).
+        '';
+      }
+
+      {
+        time = "2024-09-20T07:00:11+00:00";
+        condition = config.programs.kitty.theme != null;
+        message = ''
+          The option 'programs.kitty.theme' has been deprecated, please use
+          'programs.kitty.themeFile' instead.
+
+          The 'programs.kitty.themeFile' option expects the file name of a
+          theme from `kitty-themes`, without the `.conf` suffix. See
+          <https://github.com/kovidgoyal/kitty-themes/tree/master/themes> for a
+          list of themes.
+        '';
+      }
+
+      {
+        time = "2024-09-20T07:48:08+00:00";
+        condition = hostPlatform.isLinux && config.services.swayidle.enable;
+        message = ''
+          The swayidle module behavior has changed. Specifically, swayidle was
+          previously always called with a `-w` flag. This flag is now moved to
+          the default `services.swayidle.extraArgs` value to make it optional.
+
+          Your configuration may break if you already set this option and also
+          rely on the flag being automatically added. To resolve this, please
+          add `-w` to your assignment of `services.swayidle.extraArgs`.
+        '';
+      }
+
+      {
+        time = "2024-10-09T06:16:23+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.snixembed'.
+
+          snixembed proxies StatusNotifierItems as XEmbedded systemtray-spec
+          icons. This is useful for some tools in some environments, e.g., Safe
+          Eyes in i3, lxde or mate.
+        '';
+      }
+
+      {
+        time = "2024-10-11T08:23:19+00:00";
+        message = ''
+          A new module is available: 'programs.vifm'.
+
+          Vifm is a curses based Vim-like file manager extended with some useful
+          ideas from mutt.
+        '';
+      }
+
+      {
+        time = "2024-10-17T13:07:55+00:00";
+        message = ''
+          A new module is available: 'programs.zed-editor'.
+
+          Zed is a fast text editor for macOS and Linux.
+          See https://zed.dev for more.
+        '';
+      }
+
+      {
+        time = "2024-10-18T14:01:07+00:00";
+        message = ''
+          A new module is available: 'programs.cmus'.
+
+          cmus is a small, fast and powerful console music player.
+        '';
+      }
+
+      {
+        time = "2024-10-20T07:53:54+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.nh'.
+
+          nh is yet another Nix CLI helper. Adding functionality on top of the
+          existing solutions, like nixos-rebuild, home-manager cli or nix
+          itself.
+        '';
+      }
+
+      {
+        time = "2024-10-25T08:18:30+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'nixGL'.
+
+          NixGL solve the "OpenGL" problem with nix. The 'nixGL' module provides
+          integration of NixGL into Home Manager. See the "GPU on non-NixOS
+          systems" section in the Home Manager manual for more.
+        '';
+      }
+
+      {
+        time = "2024-11-01T19:44:59+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.podman'.
+
+          Podman is a daemonless container engine that lets you manage
+          containers, pods, and images.
+
+          This Home Manager module allows you to define containers that will run
+          as systemd services.
+        '';
+      }
+
+      {
+        time = "2024-12-01T19:17:40+00:00";
+        message = ''
+          A new module is available: 'programs.nix-your-shell'.
+
+          nix-your-shell is a wrapper for `nix develop` or `nix-shell` to retain
+          the same shell inside the new environment.
+        '';
+      }
+
+      {
+        time = "2024-12-01T19:34:04+00:00";
+        message = ''
+          A new module is available: 'programs.kubecolor'.
+
+          Kubecolor is a kubectl wrapper used to add colors to your kubectl
+          output.
+        '';
+      }
+
+      {
+        time = "2024-12-04T20:00:00+00:00";
+        condition = let
+          sCfg = config.programs.starship;
+          fCfg = config.programs.fish;
+        in sCfg.enable && sCfg.enableFishIntegration && fCfg.enable;
+        message = ''
+          A new option 'programs.starship.enableInteractive' is available for
+          the Fish shell that only enables starship if the shell is interactive.
+
+          Some plugins require this to be set to 'false' to function correctly.
+        '';
+      }
+      {
+        time = "2024-12-08T17:22:13+00:00";
+        condition = let
+          usingMbsync = lib.any (a: a.mbsync.enable)
+            (lib.attrValues config.accounts.email.accounts);
+        in usingMbsync;
+        message = ''
+          isync/mbsync 1.5.0 has changed several things.
+
+          isync gained support for using $XDG_CONFIG_HOME, and now places
+          its config file in '$XDG_CONFIG_HOME/isyncrc'.
+
+          isync changed the configuration options SSLType and SSLVersion to
+          TLSType and TLSVersion respectively.
+
+          All instances of
+          'accounts.email.accounts.<account-name>.mbsync.extraConfig.account'
+          that use 'SSLType' or 'SSLVersion' should be replaced with 'TLSType'
+          or 'TLSVersion', respectively.
+
+          TLSType options are unchanged.
+
+          TLSVersions has a new syntax, requiring a change to the Nix syntax.
+          Old Syntax: SSLVersions = [ "TLSv1.3" "TLSv1.2" ];
+          New Syntax: TLSVersions = [ "+1.3" "+1.2" "-1.1" ];
+          NOTE: The minus symbol means to NOT use that particular TLS version.
+        '';
+      }
+
+      {
+        time = "2024-12-10T22:20:10+00:00";
+        condition = config.programs.nushell.enable;
+        message = ''
+          The module 'programs.nushell' can now manage the Nushell plugin
+          registry with the option 'programs.nushell.plugins'.
+        '';
+      }
+
+      {
+        time = "2024-12-21T17:07:49+00:00";
+        message = ''
+          A new module is available: 'programs.pay-respects'.
+
+          Pay Respects is a shell command suggestions tool and command-not-found
+          and thefuck replacement written in Rust.
+        '';
+      }
+
+      {
+        time = "2024-12-22T08:24:29+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.cavalier'.
+
+          Cavalier is a GUI wrapper around the Cava audio visualizer.
+        '';
+      }
+
+      {
+        time = "2025-01-01T15:31:15+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          The 'systemd.user.startServices' option now defaults to 'true',
+          meaning that services will automatically be restarted as needed when
+          activating a configuration.
+
+          Further, the "legacy" alternative has been removed and will now result
+          in an evaluation error if used.
+
+          The "suggest" alternative will remain for a while longer but may also
+          be deprecated for removal in the future.
+        '';
+      }
+
+      {
+        time = "2025-01-01T23:16:35+00:00";
+        message = ''
+          A new module is available: 'programs.ghostty'.
+
+          Ghostty is a terminal emulator that differentiates itself by being
+          fast, feature-rich, and native. While there are many excellent
+          terminal emulators available, they all force you to choose between
+          speed, features, or native UIs. Ghostty provides all three.
+        '';
+      }
+
+      {
+        time = "2025-01-04T15:00:00+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'wayland.windowManager.wayfire'.
+
+          Wayfire is a 3D Wayland compositor, inspired by Compiz and based on
+          wlroots. It aims to create a customizable, extendable and lightweight
+          environment without sacrificing its appearance.
+
+          This Home Manager module allows you to configure both wayfire itself,
+          as well as wf-shell.
+        '';
+      }
+
+      {
+        time = "2025-01-21T17:28:13+00:00";
+        condition = with config.programs.yazi; enable && enableFishIntegration;
+        message = ''
+          Yazi's fish shell integration wrapper now calls the 'yazi' executable
+          directly, ignoring any shell aliases with the same name.
+
+          Your configuration may break if you rely on the wrapper calling a
+          'yazi' alias.
+        '';
+      }
+
+      {
+        time = "2025-01-29T17:34:53+00:00";
+        condition = config.programs.firefox.enable;
+        message = ''
+          The Firefox module now provides a
+          'programs.firefox.profiles.<name>.preConfig' option.
+
+          It allows extra preferences to be added to 'user.js' before the
+          options specified in 'programs.firefox.profiles.<name>.settings', so
+          that they can be overwritten.
+        '';
+      }
+
+      {
+        time = "2025-01-29T19:11:20+00:00";
+        condition = hostPlatform.isDarwin;
+        message = ''
+          A new module is available: 'programs.aerospace'.
+
+          AeroSpace is an i3-like tiling window manager for macOS.
+          See https://github.com/nikitabobko/AeroSpace for more.
+        '';
+      }
+
+      {
+        time = "2025-01-30T09:18:55+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.linux-wallpaperengine'.
+
+          Reproduce the background functionality of Wallpaper Engine on Linux
+          systems.
+        '';
+      }
+
+      {
+        time = "2025-02-07T22:31:45+00:00";
+        message = ''
+          All 'programs.<PROGRAM>.enable<SHELL>Integration' values now default
+          to the new 'home.shell.enable<SHELL>Integration' options, which
+          inherit from the new the 'home.shell.enableShellIntegration' option.
+
+          The following inconsistent default values change from 'false' to
+          'true':
+
+          - programs.zellij.enableBashIntegration
+          - programs.zellij.enableFishIntegration
+          - programs.zellij.enableZshIntegration
+        '';
+      }
+
+      {
+        time = "2025-02-11T15:25:26+00:00";
+        message = ''
+          A new module is available: 'programs.git-worktree-switcher'.
+
+          git-worktree-switcher allows you to quickly switch git worktrees.
+          It includes shell completions for Bash, Fish and Zsh.
+          See https://github.com/mateusauler/git-worktree-switcher for more.
+        '';
+      }
+
+      {
+        time = "2025-02-20T18:39:31+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'programs.swayimg'.
+
+          swayimg is a fully customizable and lightweight image viewer for
+          Wayland based display servers.
+          See https://github.com/artemsen/swayimg for more.
+        '';
+      }
+
+      {
+        time = "2025-02-16T17:00:00+00:00";
+        message = ''
+          A new module is available: 'services.wluma'.
+
+          Wluma is a tool for Wayland compositors to automatically adjust
+          screen brightness based on the screen contents and amount of ambient light around you.
+        '';
+      }
+
+      {
+        time = "2025-02-21T16:53:20+00:00";
+        message = ''
+          A new module is available: 'programs.earthly'.
+
+          Earthly is a build configuration framework utilizing buildkit and
+          Dockerfile-like syntax for fast builds and simplicity.
+        '';
+      }
+
+      {
+        time = "2025-02-22T16:53:20+00:00";
+        message = ''
+          A new module is available: 'programs.jqp'.
+
+          A TUI playground for experimenting with `jq`.
+        '';
+      }
+
+      {
+        time = "2025-02-22T16:46:56+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.wpaperd'.
+
+          This replaces the existing module, 'programs.wpaperd', and adds a
+          systemd service to ensure its execution.
+        '';
+      }
+
+      {
+        time = "2025-01-26T16:40:00+00:00";
+        message = ''
+          A new module is available: 'programs.mods'
+
+          mods is a command line AI tool that is highly configurable and allows
+          querying AI models hosted locally or by other services (OpenAI,
+          Cohere, Groq).
+        '';
+      }
+
+      {
+        time = "2025-03-11T02:34:43+00:00";
+        condition = config.programs.zsh.enable;
+        message = ''
+          A new module is available: 'programs.zsh.initContent'.
+
+          initContent option allows you to set the content of the zshrc file,
+          you can use `lib.mkOrder` to specify the order of the content you want to insert.
+        '';
+      }
+      {
+        time = "2025-03-19T18:10:56+00:00";
+        condition = config.services.easyeffects.enable;
+        message = ''
+          The Easyeffects module now supports adding json formatted presets
+          under '$XDG_CONFIG_HOME/easyeffects/{input,output}/'.
+        '';
+      }
+      {
+        time = "2025-02-12T15:56:00+00:00";
+        message = ''
+          A new module is available: 'programs.tex-fmt'.
+
+          tex-fmt is a LaTeX formatter written in Rust.
+          See https://github.com/WGUNDERWOOD/tex-fmt for more information.
+        '';
+      }
     ];
   };
 }

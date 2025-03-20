@@ -1,5 +1,3 @@
-{ ... }:
-
 {
   imports = [ ./i3-stubs.nix ];
 
@@ -7,12 +5,21 @@
     enable = true;
 
     config = {
-      bars = [{
-        fonts = {
-          names = [ "FontAwesome" "Iosevka" ];
-          size = 11.5;
-        };
-      }];
+      bars = [
+        {
+          fonts = {
+            names = [ "FontAwesome" "Iosevka" ];
+            size = 11.5;
+          };
+        }
+        {
+          fonts = {
+            names = [ "FontAwesome" "Iosevka" ];
+            style = "Bold Semi-Condensed";
+            size = "14px";
+          };
+        }
+      ];
       fonts = {
         names = [ "DejaVuSansMono" "Terminus" ];
         style = "Bold Semi-Condensed";

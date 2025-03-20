@@ -6,18 +6,6 @@ let
 
   cfg = config.services.swayidle;
 
-  mkTimeout = t:
-    [ "timeout" (toString t.timeout) (escapeShellArg t.command) ]
-    ++ optionals (t.resumeCommand != null) [
-      "resume"
-      (escapeShellArg t.resumeCommand)
-    ];
-
-  mkEvent = e: [ e.event (escapeShellArg e.command) ];
-
-  args = cfg.extraArgs ++ (concatMap mkTimeout cfg.timeouts)
-    ++ (concatMap mkEvent cfg.events);
-
 in {
   meta.maintainers = [ maintainers.c0deaddict ];
 
@@ -94,13 +82,14 @@ in {
 
     extraArgs = mkOption {
       type = with types; listOf str;
-      default = [ ];
+      default = [ "-w" ];
       description = "Extra arguments to pass to swayidle.";
     };
 
     systemdTarget = mkOption {
       type = types.str;
-      default = "graphical-session.target";
+      default = config.wayland.systemd.target;
+      defaultText = literalExpression "config.wayland.systemd.target";
       example = "sway-session.target";
       description = ''
         Systemd target to bind to.
@@ -118,7 +107,9 @@ in {
       Unit = {
         Description = "Idle manager for Wayland";
         Documentation = "man:swayidle(1)";
-        PartOf = [ "graphical-session.target" ];
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+        PartOf = [ cfg.systemdTarget ];
+        After = [ cfg.systemdTarget ];
       };
 
       Service = {
@@ -126,8 +117,16 @@ in {
         Restart = "always";
         # swayidle executes commands using "sh -c", so the PATH needs to contain a shell.
         Environment = [ "PATH=${makeBinPath [ pkgs.bash ]}" ];
-        ExecStart =
-          "${cfg.package}/bin/swayidle -w ${concatStringsSep " " args}";
+        ExecStart = let
+          mkTimeout = t:
+            [ "timeout" (toString t.timeout) t.command ]
+            ++ optionals (t.resumeCommand != null) [ "resume" t.resumeCommand ];
+
+          mkEvent = e: [ e.event e.command ];
+
+          args = cfg.extraArgs ++ (concatMap mkTimeout cfg.timeouts)
+            ++ (concatMap mkEvent cfg.events);
+        in "${getExe cfg.package} ${escapeShellArgs args}";
       };
 
       Install = { WantedBy = [ cfg.systemdTarget ]; };

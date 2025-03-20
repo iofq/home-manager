@@ -66,7 +66,7 @@ let
       };
 
       onEvent = mkOption {
-        type = with types; nullOr str;
+        type = with types; nullOr (either str (listOf str));
         default = null;
         description = ''
           Tells fish to run this function when the specified named event is
@@ -167,6 +167,16 @@ let
         '';
       };
 
+      command = mkOption {
+        type = with types; nullOr str;
+        default = null;
+        description = ''
+          Specifies the command(s) for which the abbreviation should expand. If
+          set, the abbreviation will only expand when used as an argument to
+          the given command(s).
+        '';
+      };
+
       setCursor = mkOption {
         type = with types; (either bool str);
         default = false;
@@ -201,7 +211,7 @@ let
               (lib.generators.mkValueStringDefault { } v)
             ];
         } {
-          inherit position regex function;
+          inherit position regex command function;
           set-cursor = setCursor;
         };
       modifiers = if isAttrs def then mods else "";
@@ -253,6 +263,12 @@ in {
         '';
       };
 
+      generateCompletions = mkEnableOption
+        "the automatic generation of completions based upon installed man pages"
+        // {
+          default = true;
+        };
+
       shellAliases = mkOption {
         type = with types; attrsOf str;
         default = { };
@@ -288,6 +304,16 @@ in {
         '';
       };
 
+      preferAbbrs = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          If enabled, abbreviations will be preferred over aliases when
+          other modules define aliases for fish.
+        '';
+      };
+
       shellInit = mkOption {
         type = types.lines;
         default = "";
@@ -312,6 +338,15 @@ in {
         description = ''
           Shell script code called during interactive fish shell
           initialisation.
+        '';
+      };
+
+      shellInitLast = mkOption {
+        type = types.lines;
+        default = "";
+        description = ''
+          Shell script code called during interactive fish shell
+          initialisation, this will be the last thing executed in fish startup.
         '';
       };
     };
@@ -371,9 +406,9 @@ in {
   };
 
   config = mkIf cfg.enable (mkMerge [
-    {
-      home.packages = [ cfg.package ];
+    { home.packages = [ cfg.package ]; }
 
+    (mkIf cfg.generateCompletions {
       # Support completion for `man` by building a cache for `apropos`.
       programs.man.generateCaches = mkDefault true;
 
@@ -437,7 +472,9 @@ in {
           set fish_complete_path $prev "${config.xdg.dataHome}/fish/home-manager_generated_completions" $post
         end
       '';
+    })
 
+    {
       xdg.configFile."fish/config.fish".source = fishIndent "config.fish" ''
         # ~/.config/fish/config.fish: DO NOT EDIT -- this file has been generated
         # automatically by home-manager.
@@ -450,14 +487,14 @@ in {
 
         ${cfg.shellInit}
 
-        status --is-login; and begin
+        status is-login; and begin
 
           # Login shell initialisation
           ${cfg.loginShellInit}
 
         end
 
-        status --is-interactive; and begin
+        status is-interactive; and begin
 
           # Abbreviations
           ${abbrsStr}
@@ -469,6 +506,8 @@ in {
           ${cfg.interactiveShellInit}
 
         end
+
+        ${cfg.shellInitLast}
       '';
     }
     {
@@ -482,7 +521,7 @@ in {
 
             mods = with def;
               modifierStr "description" description ++ modifierStr "wraps" wraps
-              ++ modifierStr "on-event" onEvent
+              ++ lib.concatMap (modifierStr "on-event") (lib.toList onEvent)
               ++ modifierStr "on-variable" onVariable
               ++ modifierStr "on-job-exit" onJobExit
               ++ modifierStr "on-process-exit" onProcessExit

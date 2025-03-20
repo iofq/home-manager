@@ -24,7 +24,7 @@ in {
     };
 
     settings = mkOption {
-      type = iniFormat.type;
+      inherit (iniFormat) type;
       default = { };
       example = {
         General = {
@@ -56,7 +56,7 @@ in {
       Unit = {
         Description = "Flameshot screenshot tool";
         Requires = [ "tray.target" ];
-        After = [ "graphical-session-pre.target" "tray.target" ];
+        After = [ "graphical-session.target" "tray.target" ];
         PartOf = [ "graphical-session.target" ];
         X-Restart-Triggers = mkIf (cfg.settings != { }) [ "${iniFile}" ];
       };
@@ -64,7 +64,7 @@ in {
       Install = { WantedBy = [ "graphical-session.target" ]; };
 
       Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
+        Environment = [ "PATH=${config.home.profileDirectory}/bin" ];
         ExecStart = "${cfg.package}/bin/flameshot";
         Restart = "on-abort";
 

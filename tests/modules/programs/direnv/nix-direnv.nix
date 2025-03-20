@@ -1,18 +1,14 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
+{ realPkgs, ... }:
 
 {
-  config = {
-    programs.bash.enable = true;
-    programs.direnv.enable = true;
-    programs.direnv.nix-direnv.enable = true;
+  programs.bash.enable = true;
+  programs.direnv.enable = true;
+  programs.direnv.nix-direnv.enable = true;
 
-    nmt.script = ''
-      assertFileExists home-files/.bashrc
-      assertFileRegex \
-        home-files/.config/direnv/direnvrc \
-        'source /nix/store/.*nix-direnv.*/share/nix-direnv/direnvrc'
-    '';
-  };
+  nixpkgs.overlays = [ (_: _: { inherit (realPkgs) nix-direnv; }) ];
+
+  nmt.script = ''
+    assertFileExists home-files/.bashrc
+    assertFileExists home-files/.config/direnv/lib/hm-nix-direnv.sh
+  '';
 }

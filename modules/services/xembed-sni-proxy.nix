@@ -15,8 +15,8 @@ in {
 
       package = mkOption {
         type = types.package;
-        default = pkgs.plasma-workspace;
-        defaultText = literalExpression "pkgs.plasma-workspace";
+        default = pkgs.kdePackages.plasma-workspace;
+        defaultText = literalExpression "pkgs.kdePackages.plasma-workspace";
         description = ''
           Package containing the {command}`xembedsniproxy`
           program.
@@ -34,14 +34,14 @@ in {
     systemd.user.services.xembed-sni-proxy = {
       Unit = {
         Description = "XEmbed SNI Proxy";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
 
       Install = { WantedBy = [ "graphical-session.target" ]; };
 
       Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
+        Environment = [ "PATH=${config.home.profileDirectory}/bin" ];
         ExecStart = "${cfg.package}/bin/xembedsniproxy";
         Restart = "on-abort";
       };

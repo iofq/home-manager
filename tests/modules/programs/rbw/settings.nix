@@ -8,7 +8,7 @@ let
   else
     ".config/rbw/config.json";
 
-  expected = pkgs.writeText "rbw-expected.json" ''
+  expected = builtins.toFile "rbw-expected.json" ''
     {
       "base_url": "bitwarden.example.com",
       "email": "name@example.com",
@@ -18,8 +18,6 @@ let
     }
   '';
 in {
-  imports = [ ./rbw-stubs.nix ];
-
   programs.rbw = {
     enable = true;
     settings = {
@@ -27,7 +25,7 @@ in {
       base_url = "bitwarden.example.com";
       identity_url = "identity.example.com";
       lock_timeout = 300;
-      pinentry = "gnome3";
+      pinentry = pkgs.pinentry-gnome3;
     };
   };
 

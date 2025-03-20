@@ -25,6 +25,13 @@ in {
           The settings to use for XScreenSaver.
         '';
       };
+
+      package = mkOption {
+        type = with types; package;
+        default = pkgs.xscreensaver;
+        defaultText = lib.literalExpression "pkgs.xscreensaver";
+        description = "Which xscreensaver package to use.";
+      };
     };
   };
 
@@ -35,7 +42,7 @@ in {
     ];
 
     # To make the xscreensaver-command tool available.
-    home.packages = [ pkgs.xscreensaver ];
+    home.packages = [ cfg.package ];
 
     xresources.properties =
       mapAttrs' (n: nameValuePair "xscreensaver.${n}") cfg.settings;
@@ -43,7 +50,7 @@ in {
     systemd.user.services.xscreensaver = {
       Unit = {
         Description = "XScreenSaver";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
 
         # Make sure the service is restarted if the settings change.
@@ -52,8 +59,8 @@ in {
       };
 
       Service = {
-        ExecStart = "${pkgs.xscreensaver}/bin/xscreensaver -no-splash";
-        Environment = "PATH=${makeBinPath [ pkgs.xscreensaver ]}";
+        ExecStart = "${cfg.package}/bin/xscreensaver -no-splash";
+        Environment = [ "PATH=${makeBinPath [ cfg.package ]}" ];
       };
 
       Install = { WantedBy = [ "graphical-session.target" ]; };

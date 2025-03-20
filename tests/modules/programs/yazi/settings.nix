@@ -1,39 +1,37 @@
-{ ... }:
-
 {
   programs.yazi = {
     enable = true;
 
     keymap = {
-      input.keymap = [
+      input.prepend_keymap = [
         {
-          exec = "close";
+          run = "close";
           on = [ "<C-q>" ];
         }
         {
-          exec = "close --submit";
+          run = "close --submit";
           on = [ "<Enter>" ];
         }
         {
-          exec = "escape";
+          run = "escape";
           on = [ "<Esc>" ];
         }
         {
-          exec = "backspace";
+          run = "backspace";
           on = [ "<Backspace>" ];
         }
       ];
-      manager.keymap = [
+      manager.prepend_keymap = [
         {
-          exec = "escape";
+          run = "escape";
           on = [ "<Esc>" ];
         }
         {
-          exec = "quit";
+          run = "quit";
           on = [ "q" ];
         }
         {
-          exec = "close";
+          run = "close";
           on = [ "<C-q>" ];
         }
       ];
@@ -42,7 +40,7 @@
       log = { enabled = false; };
       manager = {
         show_hidden = false;
-        sort_by = "modified";
+        sort_by = "mtime";
         sort_dir_first = true;
         sort_reverse = true;
       };
@@ -64,14 +62,29 @@
           }
           {
             fg = "#CD9EFC";
-            mime = "application/x-bzip";
+            mime = "application/bzip";
           }
         ];
       };
     };
+    initLua = ./init.lua;
+    plugins = {
+      testplugin = ./plugin;
+      ## Produces warning
+      #"plugin-with-suffix.yazi" = ./plugin;
+      ## Fails assertion
+      #single-file-plugin = ./plugin/init.lua;
+      #empty-dir-plugin = ./empty;
+    };
+    flavors = {
+      testflavor = ./flavor;
+      ## Produces warning
+      #"flavor-with-suffix.yazi" = ./flavor;
+      ## Fails assertion
+      #single-file-flavor = ./flavor/flavor.toml;
+      #empty-dir-flavor = ./empty;
+    };
   };
-
-  test.stubs.yazi = { };
 
   nmt.script = ''
     assertFileContent home-files/.config/yazi/keymap.toml \
@@ -80,5 +93,11 @@
       ${./settings-expected.toml}
     assertFileContent home-files/.config/yazi/theme.toml \
       ${./theme-expected.toml}
+    assertFileContent home-files/.config/yazi/init.lua \
+      ${./init.lua}
+    assertFileContent home-files/.config/yazi/plugins/testplugin.yazi/init.lua \
+      ${./plugin/init.lua}
+    assertFileContent home-files/.config/yazi/flavors/testflavor.yazi/flavor.toml \
+      ${./flavor/flavor.toml}
   '';
 }

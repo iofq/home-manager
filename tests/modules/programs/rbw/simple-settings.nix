@@ -8,18 +8,16 @@ let
   else
     ".config/rbw/config.json";
 
-  expected = pkgs.writeText "rbw-expected.json" ''
+  expected = builtins.toFile "rbw-expected.json" ''
     {
       "base_url": null,
       "email": "name@example.com",
       "identity_url": null,
       "lock_timeout": 3600,
-      "pinentry": "@pinentry-gtk2@/bin/pinentry"
+      "pinentry": null
     }
   '';
 in {
-  imports = [ ./rbw-stubs.nix ];
-
   programs.rbw = {
     enable = true;
     settings = { email = "name@example.com"; };

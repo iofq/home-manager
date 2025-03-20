@@ -15,7 +15,7 @@ let
     "--basic-auth ${escapeShellArg cfg.httpAuth}");
 
 in {
-  meta.maintainers = [ maintainers.ivar ];
+  meta.maintainers = [ ];
 
   options.services.pbgopy = {
     enable = mkEnableOption "pbgopy";
@@ -60,7 +60,7 @@ in {
     systemd.user.services.pbgopy = {
       Unit = {
         Description = "pbgopy server for sharing the clipboard between devices";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
       Service = {

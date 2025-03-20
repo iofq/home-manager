@@ -1,19 +1,19 @@
-{ config, lib, pkgs, ... }:
+modulePath:
+{ config, lib, ... }:
+let
+  cfg = lib.getAttrFromPath modulePath config;
 
-with lib;
+  firefoxMockOverlay = import ./setup-firefox-mock-overlay.nix modulePath;
+in {
+  imports = [ firefoxMockOverlay ];
 
-{
-  imports = [ ./setup-firefox-mock-overlay.nix ];
-
-  config = lib.mkIf config.test.enableBig {
+  config = lib.mkIf config.test.enableBig ({
     home.stateVersion = "19.09";
-
-    programs.firefox.enable = true;
-
+  } // lib.setAttrByPath modulePath { enable = true; } // {
     nmt.script = ''
       assertFileRegex \
-        home-path/bin/firefox \
+        home-path/bin/${cfg.wrappedPackageName} \
         MOZ_APP_LAUNCHER
     '';
-  };
+  });
 }

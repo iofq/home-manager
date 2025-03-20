@@ -1,6 +1,4 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
+{ config, pkgs, ... }:
 
 {
   imports = [ ../../accounts/email-test-accounts.nix ];
@@ -13,6 +11,7 @@ with lib;
       imapnotify = {
         enable = true;
         boxes = [ "Inbox" ];
+        extraArgs = [ "--wait 1" ];
         onNotify = ''
           ${pkgs.notmuch}/bin/notmuch new
         '';
@@ -28,12 +27,15 @@ with lib;
     });
   };
 
-  test.stubs.notmuch = { };
-
   nmt.script = ''
     serviceFile="home-files/.config/systemd/user/imapnotify-hm-example.com.service"
     serviceFileNormalized="$(normalizeStorePaths "$serviceFile")"
     assertFileExists $serviceFile
     assertFileContent $serviceFileNormalized ${./imapnotify.service}
+
+    configFile="home-files/.config/imapnotify/imapnotify-hm-example.com-config.json"
+    configFileNormalized="$(normalizeStorePaths "$configFile")"
+    assertFileExists $configFile
+    assertFileContent $configFileNormalized ${./imapnotify-config.json}
   '';
 }

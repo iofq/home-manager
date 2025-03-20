@@ -1,6 +1,4 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
+{ config, ... }:
 
 {
   config = {
@@ -31,8 +29,6 @@ with lib;
                   "modules-center": [
                     "test"
                   ],
-                  "modules-left": [],
-                  "modules-right": [],
                   "test": {}
                 }
               ]

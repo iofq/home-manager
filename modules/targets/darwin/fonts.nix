@@ -1,7 +1,5 @@
 { config, lib, pkgs, ... }:
 
-with lib;
-
 let
   homeDir = config.home.homeDirectory;
   fontsEnv = pkgs.buildEnv {
@@ -10,20 +8,17 @@ let
     pathsToLink = "/share/fonts";
   };
   fonts = "${fontsEnv}/share/fonts";
+  installDir = "${homeDir}/Library/Fonts/HomeManager";
 in {
   # macOS won't recognize symlinked fonts
-  config = mkIf pkgs.stdenv.hostPlatform.isDarwin {
-    home.activation.copyFonts = hm.dag.entryAfter [ "writeBoundary" ] ''
-      copyFonts() {
-        rm -rf ${homeDir}/Library/Fonts/HomeManager || :
-
-        local f
-        find -L "${fonts}" -type f -printf '%P\0' | while IFS= read -rd "" f; do
-          run install $VERBOSE_ARG -Dm644 -T \
-            "${fonts}/$f" "${homeDir}/Library/Fonts/HomeManager/$f"
-        done
-      }
-      copyFonts
-    '';
+  config = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+    home.file."Library/Fonts/.home-manager-fonts-version" = {
+      text = "${fontsEnv}";
+      onChange = ''
+        run mkdir -p ${lib.escapeShellArg installDir}
+        run ${pkgs.rsync}/bin/rsync $VERBOSE_ARG -acL --chmod=u+w --delete \
+          ${lib.escapeShellArgs [ "${fonts}/" installDir ]}
+      '';
+    };
   };
 }

@@ -1,14 +1,13 @@
 { config, lib, pkgs, ... }:
 
 {
-  imports = [ ./sway-stubs.nix ];
-
   # Enables the default bar configuration
   home.stateVersion = "20.09";
 
   wayland.windowManager.sway = {
     enable = true;
     package = null;
+    checkConfig = false;
     config.menu = "${pkgs.dmenu}/bin/dmenu_run";
   };
 

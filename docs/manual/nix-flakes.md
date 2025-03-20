@@ -1,7 +1,7 @@
 # Nix Flakes {#ch-nix-flakes}
 
 Home Manager is compatible with [Nix
-Flakes](https://nixos.wiki/wiki/Flakes). But please be aware that this
+Flakes](https://wiki.nixos.org/wiki/Flakes). But please be aware that this
 support is still experimental and may change in backwards
 incompatible ways.
 
@@ -30,6 +30,7 @@ nix-flakes/prerequisites.md
 nix-flakes/standalone.md
 nix-flakes/nixos.md
 nix-flakes/nix-darwin.md
+nix-flakes/flake-parts.md
 ```
 
 

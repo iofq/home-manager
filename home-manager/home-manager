@@ -11,6 +11,12 @@ export TEXTDOMAINDIR=@OUT@/share/locale
 # shellcheck disable=1091
 source @HOME_MANAGER_LIB@
 
+function errMissingOptArg() {
+    # translators: For example: "home-manager: missing argument for --cores"
+    _iError "%s: missing argument for %s" "$0" "$1" >&2
+    exit 1
+}
+
 function setNixProfileCommands() {
     if  [[ -e $HOME/.nix-profile/manifest.json \
         || -e ${XDG_STATE_HOME:-$HOME/.local/state}/nix/profile/manifest.json ]] ; then
@@ -44,6 +50,11 @@ function hasFlakeSupport() {
             | grep experimental-features \
             | grep flakes \
             | grep -q nix-command
+}
+
+# Escape string for use in Nix files.
+function escapeForNix() {
+    printf %s "$1" | sed 's/["$\\]/\\\0/g'
 }
 
 # Attempts to set the HOME_MANAGER_CONFIG global variable.
@@ -137,6 +148,10 @@ function setHomeManagerPathVariables() {
         return
     fi
 
+    _iVerbose "Sanity checking Nix"
+    nix-build --quiet --expr '{}' --no-out-link > /dev/null 2>&1 || true
+    nix-env -q > /dev/null 2>&1 || true
+
     declare -r globalNixStateDir="${NIX_STATE_DIR:-/nix/var/nix}"
     declare -r globalProfilesDir="$globalNixStateDir/profiles/per-user/$USER"
     declare -r globalGcrootsDir="$globalNixStateDir/gcroots/per-user/$USER"
@@ -154,7 +169,7 @@ function setHomeManagerPathVariables() {
         declare -gr HM_PROFILE_DIR="$globalProfilesDir"
     else
         _iError 'Could not find suitable profile directory, tried %s and %s' \
-                "$HM_STATE_DIR/profiles" "$globalProfilesDir" >&2
+                "$userNixStateDir/profiles" "$globalProfilesDir" >&2
         exit 1
     fi
 }
@@ -176,7 +191,7 @@ function setFlakeAttribute() {
         fi
 
         if [[ -v configFlake ]]; then
-            FLAKE_ARG="path:$(dirname "$(readlink -f "$configFlake")")"
+            FLAKE_ARG="$(dirname "$(readlink -f "$configFlake")")"
         fi
     fi
 
@@ -188,10 +203,10 @@ function setFlakeAttribute() {
                 ;;
             *)
                 local name="$USER"
-                # Check both long and short hostnames; long first to preserve
+                # Check FQDN, long, and short hostnames; long first to preserve
                 # pre-existing behaviour in case both happen to be defined.
-                for n in "$USER@$(hostname)" "$USER@$(hostname -s)"; do
-                    if [[ "$(nix eval "$flake#homeConfigurations" --apply "x: x ? \"$n\"")" == "true" ]]; then
+                for n in "$USER@$(hostname -f)" "$USER@$(hostname)" "$USER@$(hostname -s)"; do
+                    if [[ "$(nix eval "$flake#homeConfigurations" --apply "x: x ? \"$(escapeForNix "$n")\"")" == "true" ]]; then
                         name="$n"
                         if [[ -v VERBOSE ]]; then
                             echo "Using flake homeConfiguration for $name"
@@ -200,7 +215,7 @@ function setFlakeAttribute() {
                 done
                 ;;
         esac
-        export FLAKE_CONFIG_URI="$flake#homeConfigurations.\"$name\""
+        export FLAKE_CONFIG_URI="$flake#homeConfigurations.\"$(printf %s "$name" | jq -sRr @uri)\""
     fi
 }
 
@@ -258,6 +273,9 @@ function doInit() {
         withFlake=1
     fi
 
+    local homeManagerUrl="github:nix-community/home-manager"
+    local nixpkgsUrl="github:nixos/nixpkgs/nixos-unstable"
+
     while (( $# > 0 )); do
         local opt="$1"
         shift
@@ -268,6 +286,16 @@ function doInit() {
                 ;;
             --switch)
                 switch=1
+                ;;
+            --home-manager-url)
+                [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
+                homeManagerUrl="$1"
+                shift
+                ;;
+            --nixpkgs-url)
+                [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
+                nixpkgsUrl="$1"
+                shift
                 ;;
             -*)
                 _iError "%s: unknown option '%s'" "$0" "$opt" >&2
@@ -326,8 +354,8 @@ function doInit() {
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "$USER";
-  home.homeDirectory = "$HOME";
+  home.username = "$(escapeForNix "$USER")";
+  home.homeDirectory = "$(escapeForNix "$HOME")";
 $xdgVars
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -336,7 +364,7 @@ $xdgVars
   # You should not change this value, even if you update Home Manager. If you do
   # want to update the value, then make sure to first check the Home Manager
   # release notes.
-  home.stateVersion = "23.11"; # Please read the comment before changing.
+  home.stateVersion = "24.11"; # Please read the comment before changing.
 
   # The home.packages option allows you to install Nix packages into your
   # environment.
@@ -375,9 +403,10 @@ $xdgVars
   };
 
   # Home Manager can also manage your environment variables through
-  # 'home.sessionVariables'. If you don't want to manage your shell through Home
-  # Manager then you have to manually source 'hm-session-vars.sh' located at
-  # either
+  # 'home.sessionVariables'. These will be explicitly sourced when using a
+  # shell provided by Home Manager. If you don't want to manage your shell
+  # through Home Manager then you have to manually source 'hm-session-vars.sh'
+  # located at either
   #
   #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
   #
@@ -415,13 +444,13 @@ EOF
             mkdir -p "$confDir"
             cat > "$flakeFile" <<EOF
 {
-  description = "Home Manager configuration of $USER";
+  description = "Home Manager configuration of $(escapeForNix "$USER")";
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "$nixpkgsUrl";
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "$homeManagerUrl";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -431,7 +460,7 @@ EOF
       system = "$nixSystem";
       pkgs = nixpkgs.legacyPackages.\${system};
     in {
-      homeConfigurations."$USER" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations."$(escapeForNix "$USER")" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
 
         # Specify your home configuration modules here, for example,
@@ -565,10 +594,14 @@ function presentNews() {
 }
 
 function doEdit() {
-    if [[ ! -v EDITOR || -z $EDITOR ]]; then
-        # shellcheck disable=2016
-        _i 'Please set the $EDITOR environment variable' >&2
-        return 1
+    if [[ ! -v VISUAL || -z $VISUAL ]]; then
+        if [[ ! -v EDITOR || -z $EDITOR ]]; then
+            # shellcheck disable=2016
+            _i 'Please set the $EDITOR or $VISUAL environment variable' >&2
+            return 1
+        fi
+    else
+        EDITOR=$VISUAL
     fi
 
     setConfigFile
@@ -714,7 +747,11 @@ function newsReadIdsFile() {
         touch "$path"
     fi
 
-    echo "$path"
+    # Remove duplicate slashes in case $HOME or $XDG_DATA_HOME have a trailing
+    # slash. Double slashes causes Nix to error out with
+    #
+    #     error: syntax error, unexpected PATH_END, expecting DOLLAR_CURLY".
+    echo "$path" | tr -s /
 }
 
 # Builds the Home Manager news data file.
@@ -749,13 +786,13 @@ function buildNews() {
     done
 
     local readIdsFile
-    readIdsFile=$(newsReadIdsFile)
+    readIdsFile="$(newsReadIdsFile)"
 
     nix-instantiate \
         --no-build-output --strict \
         --eval '<home-manager/home-manager/build-news.nix>' \
-        --arg newsJsonFile "$newsJsonFile" \
-        --arg newsReadIdsFile "$readIdsFile" \
+        --arg newsJsonFile "\"$(escapeForNix "$newsJsonFile")\"" \
+        --arg newsReadIdsFile "\"$(escapeForNix "$readIdsFile")\"" \
         "${extraArgs[@]}" \
         > "$newsNixFile"
 }
@@ -768,25 +805,25 @@ function doShowNews() {
     buildNews "$newsNixFile"
 
     local readIdsFile
-    readIdsFile=$(newsReadIdsFile)
+    readIdsFile="$(newsReadIdsFile)"
 
-    local news
+    local newsAttr
 
-    # shellcheck disable=2154,2046
     case $1 in
         --all)
-            news="$(nix-instantiate --quiet --eval --expr "(import ${newsNixFile}).news.all")"
+            newsAttr="all"
             ;;
         --unread)
-            news="$(nix-instantiate --quiet --eval --expr "(import ${newsNixFile}).news.unread")"
+            newsAttr="unread"
             ;;
         *)
             _i 'Unknown argument %s' "$1"
             return 1
     esac
 
-    # Prints the news without surrounding quotes.
-    echo -e "${news:1:-1}" | ${PAGER:-less}
+    nix-instantiate --quiet --eval --json --expr "(import ${newsNixFile}).news.$newsAttr" \
+        | jq -r . \
+        | ${PAGER:-less}
 
     local allIds
     allIds="$(nix-instantiate --quiet --eval --expr "(import ${newsNixFile}).meta.ids")"
@@ -823,9 +860,9 @@ function doUninstall() {
             cat > "$HOME_MANAGER_CONFIG" <<EOF
 {
   uninstall = true;
-  home.username = "$USER";
-  home.homeDirectory = "$HOME";
-  home.stateVersion = "23.11";
+  home.username = "$(escapeForNix "$USER")";
+  home.homeDirectory = "$(escapeForNix "$HOME")";
+  home.stateVersion = "24.11";
 }
 EOF
             # shellcheck disable=2064
@@ -870,6 +907,7 @@ function doHelp() {
     echo "  -j, --max-jobs NUM"
     echo "  --option NAME VALUE"
     echo "  -L, --print-build-logs"
+    echo "  --log-format FORMAT"
     echo "  --show-trace"
     echo "  --(no-)substitute"
     echo "  --no-out-link            Do not create a symlink to the output path"
@@ -881,7 +919,7 @@ function doHelp() {
     echo
     echo "  help         Print this help"
     echo
-    echo "  edit         Open the home configuration in \$EDITOR"
+    echo "  edit         Open the home configuration in \$VISUAL or \$EDITOR"
     echo
     echo "  option OPTION.NAME"
     echo "               Inspect configuration option named OPTION.NAME."
@@ -932,22 +970,27 @@ while [[ $# -gt 0 ]]; do
             COMMAND="$opt"
             ;;
         -A)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             HOME_MANAGER_CONFIG_ATTRIBUTE="$1"
             shift
             ;;
         -I)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             EXTRA_NIX_PATH+=("$1")
             shift
             ;;
         -b)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             export HOME_MANAGER_BACKUP_EXT="$1"
             shift
             ;;
         -f|--file)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             HOME_MANAGER_CONFIG="$1"
             shift
             ;;
         --flake)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             FLAKE_ARG="$1"
             shift
             ;;
@@ -955,18 +998,23 @@ while [[ $# -gt 0 ]]; do
             PASSTHROUGH_OPTS+=("$opt")
             ;;
         --update-input)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             PASSTHROUGH_OPTS+=("$opt" "$1")
             shift
             ;;
         --override-input)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
+            [[ -v 2 && $2 != -* ]] || errMissingOptArg "$opt $1"
             PASSTHROUGH_OPTS+=("$opt" "$1" "$2")
             shift 2
             ;;
         --experimental-features)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             PASSTHROUGH_OPTS+=("$opt" "$1")
             shift
             ;;
         --extra-experimental-features)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             PASSTHROUGH_OPTS+=("$opt" "$1")
             shift
             ;;
@@ -984,10 +1032,13 @@ while [[ $# -gt 0 ]]; do
             export DRY_RUN=1
             ;;
         --option|--arg|--argstr)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
+            [[ -v 2 ]] || errMissingOptArg "$opt $1"
             PASSTHROUGH_OPTS+=("$opt" "$1" "$2")
             shift 2
             ;;
-        -j|--max-jobs|--cores|--builders)
+        -j|--max-jobs|--cores|--builders|--log-format)
+            [[ -v 1 && $1 != -* ]] || errMissingOptArg "$opt"
             PASSTHROUGH_OPTS+=("$opt" "$1")
             shift
             ;;
@@ -999,7 +1050,7 @@ while [[ $# -gt 0 ]]; do
             export VERBOSE=1
             ;;
         --version)
-            echo 24.05-pre
+            echo 25.05-pre
             exit 0
             ;;
         *)

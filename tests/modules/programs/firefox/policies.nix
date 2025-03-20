@@ -1,22 +1,24 @@
+modulePath:
 { config, lib, pkgs, ... }:
+let
+  cfg = lib.getAttrFromPath modulePath config;
 
-{
-  imports = [ ./setup-firefox-mock-overlay.nix ];
+  firefoxMockOverlay = import ./setup-firefox-mock-overlay.nix modulePath;
+in {
+  imports = [ firefoxMockOverlay ];
 
-  config = lib.mkIf config.test.enableBig {
+  config = lib.mkIf config.test.enableBig ({
     home.stateVersion = "23.05";
-
-    programs.firefox = {
-      enable = true;
-      policies = { BlockAboutConfig = true; };
-      package = pkgs.firefox.override {
-        extraPolicies = { DownloadDirectory = "/foo"; };
-      };
+  } // lib.setAttrByPath modulePath {
+    enable = true;
+    policies = { BlockAboutConfig = true; };
+    package = pkgs.${cfg.wrappedPackageName}.override {
+      extraPolicies = { DownloadDirectory = "/foo"; };
     };
-
+  } // {
     nmt.script = ''
       jq=${lib.getExe pkgs.jq}
-      config_file="${config.programs.firefox.finalPackage}/lib/firefox/distribution/policies.json"
+      config_file="${cfg.finalPackage}/lib/${cfg.wrappedPackageName}/distribution/policies.json"
 
       assertFileExists "$config_file"
 
@@ -32,5 +34,5 @@
         fail "Expected '$config_file' to set 'policies.DownloadDirectory' to \"/foo\""
       fi
     '';
-  };
+  });
 }

@@ -2,10 +2,10 @@
 WantedBy=graphical-session.target
 
 [Service]
-Environment=PATH=@coreutils@/bin:@xdotool@/bin
-ExecStart=@fusuma@/bin/fusuma -c /home/hm-user/.config/fusuma/config.yaml
+Environment=PATH=@coreutils@/bin:@xdotool@/bin:@xorg.xprop@/bin
+ExecStart=@fusuma@/bin/fusuma
 
 [Unit]
-After=graphical-session-pre.target
+After=graphical-session.target
 Description=Fusuma services
 PartOf=graphical-session.target

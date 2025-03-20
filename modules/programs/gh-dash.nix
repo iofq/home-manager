@@ -7,12 +7,12 @@ let
   yamlFormat = pkgs.formats.yaml { };
 
 in {
-  meta.maintainers = [ lib.maintainers.janik ];
+  meta.maintainers = [ lib.hm.maintainers.janik ];
 
   options.programs.gh-dash = {
     enable = lib.mkEnableOption "GitHub CLI dashboard plugin";
 
-    package = lib.mkPackageOption pkgs "gh-dash" { };
+    package = lib.mkPackageOption pkgs "gh-dash" { nullable = true; };
 
     settings = lib.mkOption {
       type = yamlFormat.type;
@@ -32,9 +32,9 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ cfg.package ];
+    home.packages = lib.mkIf (cfg.package != null) [ cfg.package ];
 
-    programs.gh.extensions = [ cfg.package ];
+    programs.gh.extensions = lib.mkIf (cfg.package != null) [ cfg.package ];
 
     xdg.configFile."gh-dash/config.yml".source =
       yamlFormat.generate "gh-dash-config.yml" cfg.settings;

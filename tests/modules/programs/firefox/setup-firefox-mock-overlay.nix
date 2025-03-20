@@ -1,22 +1,36 @@
-{ pkgs, ... }:
+modulePath:
+{ config, lib, realPkgs, ... }:
 
-{
-  nixpkgs.overlays = [
-    (self: super: {
-      firefox-unwrapped = pkgs.runCommandLocal "firefox-0" {
-        meta.description = "I pretend to be Firefox";
-        passthru.gtk3 = null;
-      } ''
+let
+
+  cfg = lib.getAttrFromPath modulePath config;
+
+in {
+  test.stubs = let unwrappedName = "${cfg.wrappedPackageName}-unwrapped";
+  in {
+    "${unwrappedName}" = {
+      name = unwrappedName;
+      extraAttrs = {
+        binaryName = cfg.wrappedPackageName;
+        gtk3 = null;
+        meta.description = "I pretend to be ${cfg.name}";
+      };
+      outPath = null;
+      buildScript = ''
+        echo BUILD
         mkdir -p "$out"/{bin,lib}
-        touch "$out/bin/firefox"
-        chmod 755 "$out/bin/firefox"
+        touch "$out/bin/${cfg.wrappedPackageName}"
+        chmod 755 "$out/bin/${cfg.wrappedPackageName}"
       '';
+    };
 
-      chrome-gnome-shell =
-        pkgs.runCommandLocal "dummy-chrome-gnome-shell" { } ''
-          mkdir -p $out/lib/mozilla/native-messaging-hosts
-          touch $out/lib/mozilla/native-messaging-hosts/dummy
-        '';
-    })
-  ];
+    chrome-gnome-shell = {
+      buildScript = ''
+        mkdir -p $out/lib/mozilla/native-messaging-hosts
+        touch $out/lib/mozilla/native-messaging-hosts/dummy
+      '';
+    };
+  };
+
+  nixpkgs.overlays = [ (_: _: { inherit (realPkgs) mozlz4a; }) ];
 }

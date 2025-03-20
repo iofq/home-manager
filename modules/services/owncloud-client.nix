@@ -24,12 +24,12 @@ in {
     systemd.user.services.owncloud-client = {
       Unit = {
         Description = "Owncloud Client";
-        After = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session.target" ];
         PartOf = [ "graphical-session.target" ];
       };
 
       Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
+        Environment = [ "PATH=${config.home.profileDirectory}/bin" ];
         ExecStart = "${cfg.package}/bin/owncloud";
       };
 

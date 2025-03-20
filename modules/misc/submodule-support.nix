@@ -1,13 +1,11 @@
 { lib, ... }:
 
-with lib;
-
 {
-  meta.maintainers = [ maintainers.rycee ];
+  meta.maintainers = [ lib.maintainers.rycee ];
 
   options.submoduleSupport = {
-    enable = mkOption {
-      type = types.bool;
+    enable = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       internal = true;
       description = ''
@@ -16,8 +14,8 @@ with lib;
       '';
     };
 
-    externalPackageInstall = mkOption {
-      type = types.bool;
+    externalPackageInstall = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       internal = true;
       description = ''
@@ -27,6 +25,21 @@ with lib;
         the packages through
         {option}`users.users.‹name?›.packages`.
       '';
+    };
+  };
+
+  config = {
+    # To make it easier for the end user to override the values in the
+    # configuration depending on the installation method, we set default values
+    # for the arguments that are defined in the NixOS/nix-darwin modules.
+    #
+    # Without these defaults, these attributes would simply not exist, and the
+    # module system can not inform modules about their non-existence; see
+    # https://github.com/NixOS/nixpkgs/issues/311709#issuecomment-2110861842
+    _module.args = {
+      osConfig = lib.mkDefault null;
+      nixosConfig = lib.mkDefault null;
+      darwinConfig = lib.mkDefault null;
     };
   };
 }

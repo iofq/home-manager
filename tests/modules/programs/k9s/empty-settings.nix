@@ -1,11 +1,16 @@
-{ ... }:
+{ pkgs, lib, ... }:
 
 {
   programs.k9s.enable = true;
 
-  test.stubs.k9s = { };
+  xdg.enable = lib.mkIf pkgs.stdenv.isDarwin false;
 
-  nmt.script = ''
-    assertPathNotExists home-files/.config/k9s
+  nmt.script = let
+    configDir = if !pkgs.stdenv.isDarwin then
+      ".config/k9s"
+    else
+      "Library/Application Support/k9s";
+  in ''
+    assertPathNotExists home-files/${configDir}
   '';
 }

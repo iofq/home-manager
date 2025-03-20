@@ -1,14 +1,7 @@
-{ config, pkgs, ... }:
+{ config, ... }:
 
 let
-  inherit (pkgs.stdenv.hostPlatform) isDarwin;
-
-  path = if isDarwin then
-    "Library/Application Support/rio/config.toml"
-  else
-    ".config/rio/config.toml";
-
-  expected = pkgs.writeText "rio-expected.toml" ''
+  expected = builtins.toFile "rio-expected.toml" ''
     cursor = "_"
     padding-x = 0
     performance = "Low"
@@ -26,7 +19,7 @@ in {
   };
 
   nmt.script = ''
-    assertFileExists home-files/"${path}"
-    assertFileContent home-files/"${path}" '${expected}'
+    assertFileExists home-files/.config/rio/config.toml
+    assertFileContent home-files/.config/rio/config.toml '${expected}'
   '';
 }
